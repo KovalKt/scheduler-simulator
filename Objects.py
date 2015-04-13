@@ -4,14 +4,19 @@ from PyQt4.QtGui import QPen
 CIRCLE_SIZE = 36
 CIRCLE_R = CIRCLE_SIZE/2
 
-class Node():
+class DrawableObject():
+    
+    def set_weight(self, weight):
+        self.weight = weight
+
+class Node(DrawableObject):
     def __init__(self, id, center_x, center_y):
         self.id = id
         self.x = center_x - CIRCLE_R
         self.y = center_y - CIRCLE_R
         self.center_x = center_x
         self.center_y = center_y
-        self.weight = 0
+        self.weight = 1
         self.selected = False
 
     def __repr__(self):
@@ -22,7 +27,7 @@ class Node():
             y1 < (self.center_y + CIRCLE_R) and y1 > (self.center_y - CIRCLE_R))
 
     def set_weight(self, weight):
-        self.weight = weight
+        self.weight = weight  
 
     def set_new_coordinate(self, new_x, new_y):
         self.center_x = new_x
@@ -47,25 +52,36 @@ class Node():
         qp.setFont(QFont('Decorative', 10))
         qp.drawText(self.center_x-5, self.center_y+5, text)
 
-class Line():
+class Line(DrawableObject):
     def __init__(self, id, from_node, to_node):
         self.id = id
         self.from_node = from_node
         self.to_node = to_node
-        # self.center_x = center_x
-        # self.center_y = center_y
-        self.weight = 0
+        self.weight = 1
         self.selected = False
 
+    def center_x(self):
+        return (self.from_node.center_x + (self.to_node.center_x - self.from_node.center_x) / 2)
+
+    def center_y(self):
+        return (self.from_node.center_y + (self.to_node.center_y - self.from_node.center_y) / 2)
+
     def is_selected(self, x, y):
-        pass
+        return (x < (self.center_x() + CIRCLE_R) and x > (self.center_x() - CIRCLE_R) and 
+            y < (self.center_y() + CIRCLE_R) and y > (self.center_y() - CIRCLE_R))
 
     def draw_itself(self, event, qp):
-        qp.setPen(QPen(QColor(0, 0, 0, 150), 2, 2))
+        line_color = QColor(153, 0, 0) if self.selected else QColor(0, 0, 0, 200)
+        qp.setPen(QPen(line_color, 2))
         qp.drawLine(
             self.from_node.center_x, 
             self.from_node.center_y, 
             self.to_node.center_x, 
             self.to_node.center_y,
         )
+        # draw weight
+        text = str(self.weight)
+        qp.setPen(QPen(QColor(25, 0, 51)))
+        qp.setFont(QFont('Decorative', 10))
+        qp.drawText(self.center_x()-2, self.center_y()+2, text)
 

@@ -19,6 +19,7 @@ class MainGui(QtGui.QMainWindow):
         self.line_list = []
         self.node_posicion_map = dict()
         self.selected_node = None
+        self.selected_line = None
         self.initUI()
         self.initMenu()
     
@@ -48,27 +49,40 @@ class MainGui(QtGui.QMainWindow):
     def mousePressEvent(self, event):
         x = event.pos().x()  # - CIRCLE_SIZE/2
         y = event.pos().y()  # - CIRCLE_SIZE/2
-        selected_node2 = find_selected_node(self.node_list, x, y)
-        # print 'on mousePressEvent', self.selected_node, selected_node2
-        if self.selected_node:
-            if selected_node2:
-                # draw line
-                new_line = Line(line_index_gen.next(), self.selected_node, selected_node2)
-                self.line_list.append(new_line)
-            self.selected_node.selected = False
-            self.selected_node = None 
-        else:            
-            if selected_node2:
-                self.selected_node = selected_node2
-                selected_node2.selected = True
-            else:    
-                node_weight_dialog = DialogWindow()
-                weight, ans = node_weight_dialog.showDialog('Enter node weight:')
-                if ans:
-                    new_node = Node(node_index_gen.next(), x, y)
-                    new_node.set_weight(weight)
-                    self.node_list.append(new_node)
-                    self.node_posicion_map[(x, y)] = new_node
+        selected_obj = find_selected_odj(self.node_list+self.line_list, x, y)
+        selected_line, selected_node2 = (None, None)
+        if isinstance(selected_obj, Node):
+            selected_node2 = selected_obj
+        elif isinstance(selected_obj, Line):
+            selected_line = selected_obj
+        if selected_line:
+            if self.selected_line:
+                self.selected_line.selected = False
+            self.selected_line = selected_line
+            selected_line.selected = True
+        else:
+            if self.selected_line:
+                self.selected_line.selected = False
+            self.selected_line = None
+            if self.selected_node:
+                if selected_node2:
+                    # draw line
+                    new_line = Line(line_index_gen.next(), self.selected_node, selected_node2)
+                    self.line_list.append(new_line)
+                self.selected_node.selected = False
+                self.selected_node = None 
+            else:            
+                if selected_node2:
+                    self.selected_node = selected_node2
+                    selected_node2.selected = True
+                else:    
+                    node_weight_dialog = DialogWindow()
+                    weight, ans = node_weight_dialog.showDialog('Enter node weight:')
+                    if ans:
+                        new_node = Node(node_index_gen.next(), x, y)
+                        new_node.set_weight(weight)
+                        self.node_list.append(new_node)
+                        self.node_posicion_map[(x, y)] = new_node
 
 
 
@@ -85,6 +99,11 @@ class MainGui(QtGui.QMainWindow):
                 weight, ans = node_weight_dialog.showDialog('Enter new node weight:')
                 if ans:
                     self.selected_node.set_weight(weight)
+            elif self.selected_line:
+                line_weight_dialog = DialogWindow()
+                weight, ans = line_weight_dialog.showDialog('Enter new line weight:')
+                if ans:
+                    self.selected_line.set_weight(weight)
 
     
     def drawPoints(self, qp):
@@ -112,19 +131,15 @@ class MainGui(QtGui.QMainWindow):
             line.draw_itself(event, qp)
         for node in self.node_list:
             node.draw_itself(event, qp)
-            # qp.drawEllipse(node.x, node.y, CIRCLE_SIZE, CIRCLE_SIZE)
-            # self.draw_id(event, qp, node)
-            # self.draw_weight(event, qp, node)
-  
 
 
-def find_selected_node(node_list, x, y):
-    selected_node = None
-    for node in node_list:
-        if node.is_selected(x, y):
-            selected_node = node
+def find_selected_odj(obj_list, x, y):
+    selected_obj = None
+    for obj in obj_list:
+        if obj.is_selected(x, y):
+            selected_obj = obj
             break
-    return selected_node
+    return selected_obj
 
 
 class DialogWindow(QtGui.QWidget):
