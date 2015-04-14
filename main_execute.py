@@ -22,6 +22,7 @@ class MainGui(QtGui.QMainWindow):
         self.selected_line = None
         self.initUI()
         self.initMenu()
+        self.line_map = dict()
     
     def initUI(self):
         self.setGeometry(350, 150, 800, 550)
@@ -31,11 +32,24 @@ class MainGui(QtGui.QMainWindow):
         exitAction = QtGui.QAction(QtGui.QIcon('exit.png'), '&Exit', self)
         exitAction.setShortcut('Ctrl+Q')
         exitAction.triggered.connect(self.close)
+        
+        saveAction = QtGui.QAction(QtGui.QIcon('save.png'), '&Save as..', self)
+        saveAction.triggered.connect(self.save_into_file)
 
         menubar = self.menuBar()   
         fileMenu = menubar.addMenu('&File')
         fileMenu.addAction(exitAction)
+        fileMenu.addAction(saveAction)
 
+    def save_into_file(self):
+        save_file_dialog = DialogWindow()
+        file_name, ans = save_file_dialog.showDialog('Enter file name:')
+        if ans:
+            data = str(self.node_list) + ';'
+            data += str(self.line_list) + ';'
+            with open(file_name, 'w') as f:
+                f.write(data)
+        print 'file was saved'
 
     def paintEvent(self, event):
 
@@ -51,6 +65,8 @@ class MainGui(QtGui.QMainWindow):
         y = event.pos().y()  # - CIRCLE_SIZE/2
         selected_obj = find_selected_odj(self.node_list+self.line_list, x, y)
         selected_line, selected_node2 = (None, None)
+        for k, v in self.line_map.iteritems():
+            print k, v
         if isinstance(selected_obj, Node):
             selected_node2 = selected_obj
         elif isinstance(selected_obj, Line):
@@ -64,11 +80,17 @@ class MainGui(QtGui.QMainWindow):
             if self.selected_line:
                 self.selected_line.selected = False
             self.selected_line = None
+            print 'selecte node 1 = ', self.selected_node
+            print 'selected node 2 = ', selected_node2
             if self.selected_node:
-                if selected_node2:
+                if selected_node2 and selected_node2 != self.selected_node and not (
+                    self.line_map.get((self.selected_node.id, selected_node2.id)) or
+                    self.line_map.get((selected_node2.id, self.selected_node.id))
+                ):
                     # draw line
                     new_line = Line(line_index_gen.next(), self.selected_node, selected_node2)
                     self.line_list.append(new_line)
+                    self.line_map[self.selected_node.id, selected_node2.id] = new_line
                 self.selected_node.selected = False
                 self.selected_node = None 
             else:            
