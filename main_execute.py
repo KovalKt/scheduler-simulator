@@ -9,7 +9,9 @@ from PyQt4 import QtGui, QtCore
 from Objects import *
 
 node_index_gen = count()
-line_index_gen = count()
+task_line_index_gen = count()
+sys_line_index_gen = count()
+proc_index_gen = count()
 
 
 class MainGui(QtGui.QMainWindow):
@@ -17,10 +19,13 @@ class MainGui(QtGui.QMainWindow):
     def __init__(self):
         super(MainGui, self).__init__()
         self.node_list = []
-        self.line_list = []
+        self.task_line_list = []
+        self.sys_line_list = []
+        self.proc_list = []
         self.selected_node = None
         self.selected_line = None
-        self.line_map = dict()
+        self.task_line_map = dict()
+        self.sys_line_map = dict()
         self.mode_type = 'task'
         self.initUI()
         self.initMenu()
@@ -64,6 +69,10 @@ class MainGui(QtGui.QMainWindow):
             self.mode_type = 'task'
         lable = self.get_mode_button_text()
         self.modeButton.setText(lable)
+        self.selected_node.selected = False
+        self.selected_node = None
+        self.selected_line.selected = False
+        self.selected_line = None
 
     def save_into_file(self):
         save_file_dialog = DialogWindow()
@@ -71,17 +80,20 @@ class MainGui(QtGui.QMainWindow):
         if ans:
             data = dict(
                 node_list=self.node_list,
-                line_list=self.line_list,
+                task_line_list=self.task_line_list,
                 node_last_index=node_index_gen.next(),
-                line_last_index=line_index_gen.next(),
-                line_map=self.line_map,
+                task_line_last_index=task_line_index_gen.next(),
+                sys_line_last_index=sys_line_index_gen.next(),
+                proc_last_index=proc_index_gen.next(),
+                ltask_ine_map={str(key): value for key, value in self.task_line_map.iteritems()},
+                sys_line_map={str(key): value for key, value in self.sys_line_map.iteritems()},
             )
             with open(file_name, 'w') as f:
                 json.dump(data, f)
         print 'file was saved'
 
     def open_file(self):
-        global node_index_gen, line_index_gen
+        global node_index_gen, task_line_index_gen, sys_line_index_gen, proc_index_gen
         open_file_dialog = DialogWindow()
         file_name, ans = open_file_dialog.showDialog('Enter file name:')
         if ans:
@@ -91,10 +103,12 @@ class MainGui(QtGui.QMainWindow):
                 if data:
                     self.line_map = data['line_map']
                     self.node_list = data['node_list']
-                    self.line_list = data['line_list']
+                    self.task_line_list = data['task_line_list']
                     node_index_gen = count(data['node_last_index'])
-                    line_index_gen = count(data['line_last_index'])
-                    print 'line indx ', line_last_index.next(), data['line_last_index']
+                    task_line_index_gen = count(data['task_line_last_index'])
+                    sys_line_index_gen = count(data['sys_line_last_index'])
+                    proc_index_gen = count(data['proc_last_index'])
+                    print 'line indx ', task_line_last_index.next(), data['task_line_last_index']
                     print 'node indx ', node_index_gen.next(), data['node_last_index']
 
     def paintEvent(self, event):
@@ -109,10 +123,14 @@ class MainGui(QtGui.QMainWindow):
     def mousePressEvent(self, event):
         x = event.pos().x()  # - CIRCLE_SIZE/2
         y = event.pos().y()  # - CIRCLE_SIZE/2
-        selected_obj = find_selected_odj(self.node_list+self.line_list, x, y)
+        if self.mode_type == 'task':
+            self.mouse_press_handler_task(x, y)
+        else:
+            self.mouse_press_handler_system(x, y)
+    
+    def mouse_press_handler_system(self, x, y):
+        selected_obj = find_selected_odj(self.proc_list+self.sys_line_list, x, y)
         selected_line, selected_node2 = (None, None)
-        for k, v in self.line_map.iteritems():
-            print k, v
         if isinstance(selected_obj, Node):
             selected_node2 = selected_obj
         elif isinstance(selected_obj, Line):
@@ -130,13 +148,54 @@ class MainGui(QtGui.QMainWindow):
             print 'selected node 2 = ', selected_node2
             if self.selected_node:
                 if selected_node2 and selected_node2 != self.selected_node and not (
-                    self.line_map.get((self.selected_node.id, selected_node2.id)) or
-                    self.line_map.get((selected_node2.id, self.selected_node.id))
+                    self.sys_line_map.get((self.selected_node.id, selected_node2.id)) or
+                    self.sys_line_map.get((selected_node2.id, self.selected_node.id))
                 ):
                     # draw line
-                    new_line = Line(line_index_gen.next(), self.selected_node, selected_node2)
-                    self.line_list.append(new_line)
-                    self.line_map[self.selected_node.id, selected_node2.id] = new_line
+                    new_line = Line(sys_line_index_gen.next(), self.selected_node, selected_node2)
+                    self.sys_line_list.append(new_line)
+                    self.sys_line_map[self.selected_node.id, selected_node2.id] = new_line
+                self.selected_node.selected = False
+                self.selected_node = None 
+            else:            
+                if selected_node2:
+                    self.selected_node = selected_node2
+                    selected_node2.selected = True
+                else:    
+                    node_weight_dialog = DialogWindow()
+                    weight, ans = node_weight_dialog.showDialog('Enter CPU weight:')
+                    if ans:
+                        new_node = Node(proc_index_gen.next(), x, y)
+                        new_node.set_weight(weight)
+                        self.proc_list.append(new_node)
+
+    def mouse_press_handler_task(self, x, y):
+        selected_obj = find_selected_odj(self.node_list+self.task_line_list, x, y)
+        selected_line, selected_node2 = (None, None)
+        if isinstance(selected_obj, Node):
+            selected_node2 = selected_obj
+        elif isinstance(selected_obj, Line):
+            selected_line = selected_obj
+        if selected_line:
+            if self.selected_line:
+                self.selected_line.selected = False
+            self.selected_line = selected_line
+            selected_line.selected = True
+        else:
+            if self.selected_line:
+                self.selected_line.selected = False
+            self.selected_line = None
+            print 'selecte node 1 = ', self.selected_node
+            print 'selected node 2 = ', selected_node2
+            if self.selected_node:
+                if selected_node2 and selected_node2 != self.selected_node and not (
+                    self.task_line_map.get((self.selected_node.id, selected_node2.id)) or
+                    self.task_line_map.get((selected_node2.id, self.selected_node.id))
+                ):
+                    # draw line
+                    new_line = Line(task_line_index_gen.next(), self.selected_node, selected_node2)
+                    self.task_line_list.append(new_line)
+                    self.task_line_map[self.selected_node.id, selected_node2.id] = new_line
                 self.selected_node.selected = False
                 self.selected_node = None 
             else:            
@@ -150,7 +209,6 @@ class MainGui(QtGui.QMainWindow):
                         new_node = Node(node_index_gen.next(), x, y)
                         new_node.set_weight(weight)
                         self.node_list.append(new_node)
-
 
 
     def mouseMoveEvent(self, event):
@@ -194,10 +252,16 @@ class MainGui(QtGui.QMainWindow):
         pen = QtGui.QPen(QtCore.Qt.black, 3)
         qp.setPen(pen)
 
-        for line in self.line_list:
-            line.draw_itself(event, qp)
-        for node in self.node_list:
-            node.draw_itself(event, qp)
+        if self.mode_type == 'task':
+            for line in self.task_line_list:
+                line.draw_itself(event, qp)
+            for node in self.node_list:
+                node.draw_itself(event, qp)
+        else:
+            for line in self.sys_line_list:
+                line.draw_itself(event, qp)
+            for proc in self.proc_list:
+                proc.draw_itself(event, qp)
 
 
 def find_selected_odj(obj_list, x, y):
