@@ -7,6 +7,9 @@ from itertools import count
 from PyQt4 import QtGui, QtCore
 
 from Objects import *
+from helpers import create_graph
+from helpers import check_system_graph
+from helpers import check_task_graph
 
 node_index_gen = count()
 task_line_index_gen = count()
@@ -27,6 +30,7 @@ class MainGui(QtGui.QMainWindow):
         self.task_line_map = dict()
         self.sys_line_map = dict()
         self.mode_type = 'task'
+        self.has_error = False
         self.initUI()
         self.initMenu()
     
@@ -35,6 +39,10 @@ class MainGui(QtGui.QMainWindow):
         self.setWindowTitle('My magic application')
         self.modeButton = QtGui.QPushButton(self.get_mode_button_text(), self)
         self.connect(self.modeButton, QtCore.SIGNAL('clicked()'), self.mode_button_heandler)
+
+        self.validateButton = QtGui.QPushButton('valid', self)
+        self.validateButton.move(100, 0)
+        self.connect(self.validateButton, QtCore.SIGNAL('clicked()'), self.validate)
 
     def initMenu(self):
         exitAction = QtGui.QAction(QtGui.QIcon('exit.png'), '&Exit', self)
@@ -74,6 +82,22 @@ class MainGui(QtGui.QMainWindow):
         self.selected_line.selected = False
         self.selected_line = None
 
+    def validate(self):
+        # validate system graph
+        graph = create_graph(self.proc_list, self.sys_line_list, 'system')
+        error_1 = check_system_graph(graph)
+        # validate task graph
+        graph = create_graph(self.node_list, self.task_line_list, 'task')
+        error_2 = check_task_graph(graph)
+        if error_1 or error_2:
+            self.has_error = True
+            error_message = 'Validation failed!\n'
+            error_message += 'Check task graph!' if error_2 else 'Check system graph!'
+            # error_dialog = DialogWindow()
+            # error_dialog.show_error_dialog(error_message)
+        else:
+            self.has_error = False
+
     def save_into_file(self):
         save_file_dialog = DialogWindow()
         file_name, ans = save_file_dialog.showDialog('Enter file name:')
@@ -112,7 +136,14 @@ class MainGui(QtGui.QMainWindow):
                     print 'node indx ', node_index_gen.next(), data['node_last_index']
 
     def paintEvent(self, event):
-
+        if self.has_error:
+            p = self.palette()
+            p.setColor(self.backgroundRole(), QColor(255, 153, 153, 150))
+            self.setPalette(p)
+        else:
+            p = self.palette()
+            p.setColor(self.backgroundRole(), QColor(204, 255, 204, 150))
+            self.setPalette(p)
         qp = QtGui.QPainter()
         qp.begin(self)
         if len(self.node_list):
@@ -295,6 +326,14 @@ class DialogWindow(QtGui.QWidget):
         if ok:
             self.le.setText(str(text))
         return text, ok
+
+    # def show_error_dialog(self, message):
+    #     lable = QtGui.QLabel(message, self)
+    #     lable.setAlignment(QtCore.Qt.AlignHCenter)
+    #     btnQuit = QtGui.QPushButton(u"Quit", self)
+    #     btnQuit.setGeometry(150, 75, 200, 30)
+    #     self.connect(btnQuit, QtCore.SIGNAL('clicked()'), quit)
+    #     self.show()
 
 
 app = QtGui.QApplication(sys.argv)
