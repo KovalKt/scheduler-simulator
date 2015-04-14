@@ -2,6 +2,7 @@
 # 3 8 11
 import sys
 import random
+import json
 from itertools import count
 from PyQt4 import QtGui, QtCore
 
@@ -17,16 +18,18 @@ class MainGui(QtGui.QMainWindow):
         super(MainGui, self).__init__()
         self.node_list = []
         self.line_list = []
-        self.node_posicion_map = dict()
         self.selected_node = None
         self.selected_line = None
+        self.line_map = dict()
+        self.mode_type = 'task'
         self.initUI()
         self.initMenu()
-        self.line_map = dict()
     
     def initUI(self):
         self.setGeometry(350, 150, 800, 550)
         self.setWindowTitle('My magic application')
+        self.modeButton = QtGui.QPushButton(self.get_mode_button_text(), self)
+        self.connect(self.modeButton, QtCore.SIGNAL('clicked()'), self.mode_button_heandler)
 
     def initMenu(self):
         exitAction = QtGui.QAction(QtGui.QIcon('exit.png'), '&Exit', self)
@@ -36,20 +39,63 @@ class MainGui(QtGui.QMainWindow):
         saveAction = QtGui.QAction(QtGui.QIcon('save.png'), '&Save as..', self)
         saveAction.triggered.connect(self.save_into_file)
 
+        openFileAction = QtGui.QAction(QtGui.QIcon('open.png'), '&Open file', self)
+        openFileAction.triggered.connect(self.open_file)
+
         menubar = self.menuBar()   
         fileMenu = menubar.addMenu('&File')
         fileMenu.addAction(exitAction)
         fileMenu.addAction(saveAction)
+        fileMenu.addAction(openFileAction)
+    
+    def get_current_mode(self):
+        pass
+
+    def get_mode_button_text(self):
+        if self.mode_type == 'task':
+            return 'System mode'
+        else:
+            return 'Task mode'
+
+    def mode_button_heandler(self):
+        if self.mode_type == 'task':
+            self.mode_type = 'system'
+        else:
+            self.mode_type = 'task'
+        lable = self.get_mode_button_text()
+        self.modeButton.setText(lable)
 
     def save_into_file(self):
         save_file_dialog = DialogWindow()
         file_name, ans = save_file_dialog.showDialog('Enter file name:')
         if ans:
-            data = str(self.node_list) + ';'
-            data += str(self.line_list) + ';'
+            data = dict(
+                node_list=self.node_list,
+                line_list=self.line_list,
+                node_last_index=node_index_gen.next(),
+                line_last_index=line_index_gen.next(),
+                line_map=self.line_map,
+            )
             with open(file_name, 'w') as f:
-                f.write(data)
+                json.dump(data, f)
         print 'file was saved'
+
+    def open_file(self):
+        global node_index_gen, line_index_gen
+        open_file_dialog = DialogWindow()
+        file_name, ans = open_file_dialog.showDialog('Enter file name:')
+        if ans:
+            with open(file_name, 'r') as f:
+                data = json.load(f)
+                print type(data)
+                if data:
+                    self.line_map = data['line_map']
+                    self.node_list = data['node_list']
+                    self.line_list = data['line_list']
+                    node_index_gen = count(data['node_last_index'])
+                    line_index_gen = count(data['line_last_index'])
+                    print 'line indx ', line_last_index.next(), data['line_last_index']
+                    print 'node indx ', node_index_gen.next(), data['node_last_index']
 
     def paintEvent(self, event):
 
@@ -104,7 +150,6 @@ class MainGui(QtGui.QMainWindow):
                         new_node = Node(node_index_gen.next(), x, y)
                         new_node.set_weight(weight)
                         self.node_list.append(new_node)
-                        self.node_posicion_map[(x, y)] = new_node
 
 
 
