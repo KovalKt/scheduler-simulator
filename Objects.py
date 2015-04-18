@@ -1,6 +1,8 @@
 from PyQt4.QtGui import QColor
 from PyQt4.QtGui import QFont
 from PyQt4.QtGui import QPen
+
+from math import sqrt
 CIRCLE_SIZE = 36
 CIRCLE_R = CIRCLE_SIZE/2
 
@@ -70,15 +72,31 @@ class Line(DrawableObject):
         return (x < (self.center_x() + CIRCLE_R) and x > (self.center_x() - CIRCLE_R) and 
             y < (self.center_y() + CIRCLE_R) and y > (self.center_y() - CIRCLE_R))
 
-    def draw_itself(self, event, qp):
+    def get_on_circle_point(self):
+        x2 = self.from_node.center_x
+        x1 = self.to_node.center_x
+        y2 = self.from_node.center_y
+        y1 = self.to_node.center_y
+        l = sqrt(pow(x1 - x2, 2) + pow(y1 - y2, 2))
+        xc = x1 - ((x1 - x2) * CIRCLE_R) / l 
+        yc = y1 - ((y1 - y2) * CIRCLE_R) / l
+        return xc, yc
+
+
+    def draw_itself(self, event, qp, mode_type):
         line_color = QColor(153, 0, 0) if self.selected else QColor(0, 0, 0, 200)
         qp.setPen(QPen(line_color, 2))
+        on_circle_point = self.get_on_circle_point()
         qp.drawLine(
             self.from_node.center_x, 
             self.from_node.center_y, 
-            self.to_node.center_x, 
-            self.to_node.center_y,
+            on_circle_point[0],
+            on_circle_point[1],
         )
+        if mode_type == 'task':
+            # draw pointer
+            qp.setPen(QPen(QColor(0, 0, 0), 12))
+            qp.drawPoint(*on_circle_point)
         # draw weight
         text = str(self.weight)
         qp.setPen(QPen(QColor(25, 0, 51)))

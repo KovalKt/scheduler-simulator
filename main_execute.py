@@ -40,9 +40,11 @@ class MainGui(QtGui.QMainWindow):
         self.modeButton = QtGui.QPushButton(self.get_mode_button_text(), self)
         self.connect(self.modeButton, QtCore.SIGNAL('clicked()'), self.mode_button_heandler)
 
-        self.validateButton = QtGui.QPushButton('valid', self)
+        self.validateButton = QtGui.QPushButton('Validation', self)
         self.validateButton.move(100, 0)
         self.connect(self.validateButton, QtCore.SIGNAL('clicked()'), self.validate)
+        self.modeTypeLabel = QtGui.QLabel(self.get_mode_label_text(), self)
+        self.modeTypeLabel.move(700, 0)
 
     def initMenu(self):
         exitAction = QtGui.QAction(QtGui.QIcon('exit.png'), '&Exit', self)
@@ -70,6 +72,13 @@ class MainGui(QtGui.QMainWindow):
         else:
             return 'Task mode'
 
+    def get_mode_label_text(self):
+        text = {
+            'task': "Task graph",
+            'system': "System graph",
+        }
+        return text[self.mode_type]
+
     def mode_button_heandler(self):
         if self.mode_type == 'task':
             self.mode_type = 'system'
@@ -77,6 +86,7 @@ class MainGui(QtGui.QMainWindow):
             self.mode_type = 'task'
         lable = self.get_mode_button_text()
         self.modeButton.setText(lable)
+        self.modeTypeLabel.setText(self.get_mode_label_text())
         self.selected_node.selected = False
         self.selected_node = None
         self.selected_line.selected = False
@@ -260,6 +270,14 @@ class MainGui(QtGui.QMainWindow):
                 weight, ans = line_weight_dialog.showDialog('Enter new line weight:')
                 if ans:
                     self.selected_line.set_weight(weight)
+        # if event.key() == QtCore.Qt.Key_Delete:
+        #     if self.selected_node:
+        #         self.node_list.remove(self.selected_node)
+        #         for line in reversed(self.task_line_list):
+        #             if self.selected_node == line.from_node or line.to_node:
+        #                 self.task_line_list.remove(line)
+                        
+
 
     
     def drawPoints(self, qp):
@@ -285,12 +303,12 @@ class MainGui(QtGui.QMainWindow):
 
         if self.mode_type == 'task':
             for line in self.task_line_list:
-                line.draw_itself(event, qp)
+                line.draw_itself(event, qp, self.mode_type)
             for node in self.node_list:
                 node.draw_itself(event, qp)
         else:
             for line in self.sys_line_list:
-                line.draw_itself(event, qp)
+                line.draw_itself(event, qp, self.mode_type)
             for proc in self.proc_list:
                 proc.draw_itself(event, qp)
 

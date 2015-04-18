@@ -33,13 +33,20 @@ def check_system_graph(graph):
 def check_task_graph(graph):
     if not graph:
         return False
-    keys = set(graph.keys())
-    values = set()
-    for value in graph.values():
-        if value:
-            for item in value:
-                values.add(item)
-    print keys, 'vvvvalues', values
-    return any(lambda x: x not in values for x in values)
-    # values = set([v for v in graph.values()])
 
+    def dfs_cycles(graph, begin, current, path = [], paths = []):
+        path.append(current)
+        for related in graph[current]:
+            if related == begin and len(path) > 2:
+                paths.append(list(path))
+            if related not in path:
+                paths = algo(graph, begin, related, path, paths)
+        path.pop()        
+        return paths
+
+    cycles = []
+    for node in graph.iterkeys():
+        cycles.append(algo(graph, node, node))
+    if any(map(lambda x: len(x) > 0, cycles)):
+        return True  # Error when at lees one cycle present
+    return False
