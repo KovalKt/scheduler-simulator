@@ -50,3 +50,54 @@ def check_task_graph(graph):
     if any(map(lambda x: len(x) > 0, cycles)):
         return True  # Error when at lees one cycle present
     return False
+
+def get_end_nodes(graph):
+    return [node for node, childs in graph.iteritems() if not childs]
+
+def get_start_nodes(graph):
+    start_nodes = []
+    all_childs = []
+    for value in graph.itervalues():
+        all_childs += value
+    all_childs = set(all_childs)
+    for node in graph.iterkeys():
+        if node not in all_childs:
+            start_nodes.append(node)
+    return start_nodes
+
+def build_queue3(graph):
+    if not graph:
+        return []
+
+    def find_all_paths(graph, start, end, path=[]):
+        path = path + [start]
+        if start in end:
+            return [path]
+        if not graph.has_key(start):
+            return []
+        paths = []
+        for node in graph[start]:
+            if node not in path:
+                newpaths = find_all_paths(graph, node, end, path)
+                for newpath in newpaths:
+                    paths.append(newpath)
+        return paths
+
+    critical_time_map = {node: 0 for node in graph.iterkeys()}
+    end_nodes = get_end_nodes(graph)
+    for node in graph.iterkeys():
+        all_paths = find_all_paths(graph, node, end_nodes)
+        critical_time = sum(map(lambda n: int(n.weight), all_paths[0]))
+        for path in all_paths[1:]:
+            path_time = sum(map(lambda n: int(n.weight), path))
+            if path_time < critical_time:
+                critical_time = path_time
+        critical_time_map[node] = critical_time
+    queue3 = sorted(critical_time_map.iteritems(), key=lambda (k,v): v, reverse=True)
+    # map(
+    #     lambda (node, time): node, 
+    #     sorted(critical_time_map.iteritems(), key=lambda (k,v): v, reverse=True)
+    # )
+    return queue3
+
+

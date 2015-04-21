@@ -10,6 +10,7 @@ from Objects import *
 from helpers import create_graph
 from helpers import check_system_graph
 from helpers import check_task_graph
+from helpers import build_queue3
 
 node_index_gen = count()
 task_line_index_gen = count()
@@ -38,13 +39,20 @@ class MainGui(QtGui.QMainWindow):
         self.setGeometry(350, 150, 800, 550)
         self.setWindowTitle('My magic application')
         self.modeButton = QtGui.QPushButton(self.get_mode_button_text(), self)
+        self.modeButton.resize(self.modeButton.sizeHint())
         self.connect(self.modeButton, QtCore.SIGNAL('clicked()'), self.mode_button_heandler)
 
         self.validateButton = QtGui.QPushButton('Validation', self)
-        self.validateButton.move(100, 0)
+        self.validateButton.resize(self.validateButton.sizeHint())
+        self.validateButton.move(150, 0)
         self.connect(self.validateButton, QtCore.SIGNAL('clicked()'), self.validate)
         self.modeTypeLabel = QtGui.QLabel(self.get_mode_label_text(), self)
         self.modeTypeLabel.move(700, 0)
+
+        self.buildQueueButton = QtGui.QPushButton('Build queue', self)
+        self.buildQueueButton.resize(self.buildQueueButton.sizeHint())
+        self.buildQueueButton.move(237, 0)
+        self.connect(self.buildQueueButton, QtCore.SIGNAL('clicked()'), self.build_queue_hendler)
 
     def initMenu(self):
         exitAction = QtGui.QAction(QtGui.QIcon('exit.png'), '&Exit', self)
@@ -68,9 +76,9 @@ class MainGui(QtGui.QMainWindow):
 
     def get_mode_button_text(self):
         if self.mode_type == 'task':
-            return 'System mode'
+            return 'go to System mode'
         else:
-            return 'Task mode'
+            return 'go to Task mode'
 
     def get_mode_label_text(self):
         text = {
@@ -96,11 +104,11 @@ class MainGui(QtGui.QMainWindow):
 
     def validate(self):
         # validate system graph
-        graph = create_graph(self.proc_list, self.sys_line_list, 'system')
-        error_1 = check_system_graph(graph)
+        system_graph = create_graph(self.proc_list, self.sys_line_list, 'system')
+        error_1 = check_system_graph(system_graph)
         # validate task graph
-        graph = create_graph(self.node_list, self.task_line_list, 'task')
-        error_2 = check_task_graph(graph)
+        task_graph = create_graph(self.node_list, self.task_line_list, 'task')
+        error_2 = check_task_graph(task_graph)
         if error_1 or error_2:
             self.has_error = True
             error_message = 'Validation failed!\n'
@@ -109,6 +117,18 @@ class MainGui(QtGui.QMainWindow):
             # error_dialog.show_error_dialog(error_message)
         else:
             self.has_error = False
+        return system_graph, task_graph
+
+    def build_queue_hendler(self):
+        if self.has_error:
+            return
+        system_graph, task_graph = self.validate()
+        if self.has_error:
+            return
+        queue3 = build_queue3(task_graph)
+
+        # info_wind = InfoWindow(str(queue3), 'Queue 3 build result')
+        
 
     def save_into_file(self):
         save_file_dialog = DialogWindow()
@@ -369,7 +389,24 @@ class DialogWindow(QtGui.QWidget):
     #     btnQuit = QtGui.QPushButton(u"Quit", self)
     #     btnQuit.setGeometry(150, 75, 200, 30)
     #     self.connect(btnQuit, QtCore.SIGNAL('clicked()'), quit)
-    #     self.show()
+
+class InfoWindow(QtGui.QWidget):
+
+    def __init__(self, info_text, title):
+        super(InfoWindow, self).__init__()
+
+        self.initUI(info_text, title)
+
+    def initUI(self, info_text, title):
+        self.info = QtGui.QLabel(info_text, self)
+        self.info.setAlignment(QtCore.Qt.AlignHCenter)
+
+        self.btnQuit = QtGui.QPushButton("Quit", self)
+        self.btnQuit.setGeometry(150, 57, 200, 30)
+        self.connect(self.btnQuit, QtCore.SIGNAL('clicked()'), quit)
+
+        self.setGeometry(300, 300, 290, 150)
+        self.setWindowTitle(title)
 
 
 app = QtGui.QApplication(sys.argv)
