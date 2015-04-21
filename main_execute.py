@@ -2,7 +2,7 @@
 # 3 8 11
 import sys
 import random
-import json
+import pickle
 from itertools import count
 from PyQt4 import QtGui, QtCore
 
@@ -87,10 +87,12 @@ class MainGui(QtGui.QMainWindow):
         lable = self.get_mode_button_text()
         self.modeButton.setText(lable)
         self.modeTypeLabel.setText(self.get_mode_label_text())
-        self.selected_node.selected = False
-        self.selected_node = None
-        self.selected_line.selected = False
-        self.selected_line = None
+        if self.selected_node:
+            self.selected_node.selected = False
+            self.selected_node = None
+        if self.selected_line:
+            self.selected_line.selected = False
+            self.selected_line = None
 
     def validate(self):
         # validate system graph
@@ -114,16 +116,18 @@ class MainGui(QtGui.QMainWindow):
         if ans:
             data = dict(
                 node_list=self.node_list,
+                proc_list=self.proc_list,
                 task_line_list=self.task_line_list,
+                sys_line_list=self.sys_line_list,
                 node_last_index=node_index_gen.next(),
+                proc_last_index=proc_index_gen.next(),
                 task_line_last_index=task_line_index_gen.next(),
                 sys_line_last_index=sys_line_index_gen.next(),
-                proc_last_index=proc_index_gen.next(),
-                task_line_map={str(key): value for key, value in self.task_line_map.iteritems()},
-                sys_line_map={str(key): value for key, value in self.sys_line_map.iteritems()},
+                task_line_map=self.task_line_map,
+                sys_line_map=self.sys_line_map,
             )
             with open(file_name, 'w') as f:
-                json.dump(data, f)
+                pickle.dump(data, f)
         print 'file was saved'
 
     def open_file(self):
@@ -132,19 +136,19 @@ class MainGui(QtGui.QMainWindow):
         file_name, ans = open_file_dialog.showDialog('Enter file name:')
         if ans:
             with open(file_name, 'r') as f:
-                data = json.load(f)
+                data = pickle.load(f)
                 print type(data)
                 if data:
+                    self.node_list = data['node_list']
+                    self.proc_list = data['proc_list']
+                    self.task_line_list = data['task_line_list']
+                    self.sys_line_list = data['sys_line_list']
                     self.task_line_map = data['task_line_map']
                     self.sys_line_map = data['sys_line_map']
-                    self.node_list = data['node_list']
-                    self.task_line_list = data['task_line_list']
                     node_index_gen = count(data['node_last_index'])
+                    proc_index_gen = count(data['proc_last_index'])
                     task_line_index_gen = count(data['task_line_last_index'])
                     sys_line_index_gen = count(data['sys_line_last_index'])
-                    proc_index_gen = count(data['proc_last_index'])
-                    print 'line indx ', task_line_last_index.next(), data['task_line_last_index']
-                    print 'node indx ', node_index_gen.next(), data['node_last_index']
 
     def paintEvent(self, event):
         if self.has_error:
