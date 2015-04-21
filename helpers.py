@@ -40,13 +40,13 @@ def check_task_graph(graph):
             if related == begin and len(path) > 2:
                 paths.append(list(path))
             if related not in path:
-                paths = algo(graph, begin, related, path, paths)
+                paths = dfs_cycles(graph, begin, related, path, paths)
         path.pop()        
         return paths
 
     cycles = []
     for node in graph.iterkeys():
-        cycles.append(algo(graph, node, node))
+        cycles.append(dfs_cycles(graph, node, node))
     if any(map(lambda x: len(x) > 0, cycles)):
         return True  # Error when at lees one cycle present
     return False

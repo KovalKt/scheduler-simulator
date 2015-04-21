@@ -119,7 +119,7 @@ class MainGui(QtGui.QMainWindow):
                 task_line_last_index=task_line_index_gen.next(),
                 sys_line_last_index=sys_line_index_gen.next(),
                 proc_last_index=proc_index_gen.next(),
-                ltask_ine_map={str(key): value for key, value in self.task_line_map.iteritems()},
+                task_line_map={str(key): value for key, value in self.task_line_map.iteritems()},
                 sys_line_map={str(key): value for key, value in self.sys_line_map.iteritems()},
             )
             with open(file_name, 'w') as f:
@@ -135,7 +135,8 @@ class MainGui(QtGui.QMainWindow):
                 data = json.load(f)
                 print type(data)
                 if data:
-                    self.line_map = data['line_map']
+                    self.task_line_map = data['task_line_map']
+                    self.sys_line_map = data['sys_line_map']
                     self.node_list = data['node_list']
                     self.task_line_list = data['task_line_list']
                     node_index_gen = count(data['node_last_index'])
@@ -185,8 +186,6 @@ class MainGui(QtGui.QMainWindow):
             if self.selected_line:
                 self.selected_line.selected = False
             self.selected_line = None
-            print 'selecte node 1 = ', self.selected_node
-            print 'selected node 2 = ', selected_node2
             if self.selected_node:
                 if selected_node2 and selected_node2 != self.selected_node and not (
                     self.sys_line_map.get((self.selected_node.id, selected_node2.id)) or
@@ -270,14 +269,29 @@ class MainGui(QtGui.QMainWindow):
                 weight, ans = line_weight_dialog.showDialog('Enter new line weight:')
                 if ans:
                     self.selected_line.set_weight(weight)
-        # if event.key() == QtCore.Qt.Key_Delete:
-        #     if self.selected_node:
-        #         self.node_list.remove(self.selected_node)
-        #         for line in reversed(self.task_line_list):
-        #             if self.selected_node == line.from_node or line.to_node:
-        #                 self.task_line_list.remove(line)
-                        
-
+        if event.key() == QtCore.Qt.Key_Delete:
+            if self.selected_line:
+                if self.mode_type == 'task':
+                    del self.task_line_map[self.selected_line.from_node.id, self.selected_line.to_node.id]
+                    self.task_line_list.remove(self.selected_line)
+                else:
+                    del self.sys_line_map[self.selected_line.from_node.id, self.selected_line.to_node.id]
+                    self.sys_line_list.remove(self.selected_line)
+                self.selected_line = None
+            if self.selected_node:
+                if self.mode_type == 'task':
+                    self.node_list.remove(self.selected_node)
+                    for line in reversed(self.task_line_list):
+                        if self.selected_node == line.from_node or self.selected_node == line.to_node:
+                            self.task_line_list.remove(line)
+                            del self.task_line_map[line.from_node.id, line.to_node.id]
+                else:
+                    self.proc_list.remove(self.selected_node)
+                    for line in reversed(self.sys_line_list):
+                        if self.selected_node == line.from_node or self.selected_node == line.to_node:
+                            self.sys_line_list.remove(line)
+                            del self.sys_line_map[line.from_node.id, line.to_node.id]
+                self.selected_node = None
 
     
     def drawPoints(self, qp):
