@@ -10,7 +10,7 @@ from Objects import *
 from helpers import create_graph
 from helpers import check_system_graph
 from helpers import check_task_graph
-from helpers import build_queue3
+from helpers import build_queue3, build_queue8
 
 node_index_gen = count()
 task_line_index_gen = count()
@@ -32,6 +32,8 @@ class MainGui(QtGui.QMainWindow):
         self.sys_line_map = dict()
         self.mode_type = 'task'
         self.has_error = False
+        self.queue3 = []
+        self.queue8 = []
         self.initUI()
         self.initMenu()
     
@@ -126,6 +128,11 @@ class MainGui(QtGui.QMainWindow):
         if self.has_error:
             return
         queue3 = build_queue3(task_graph)
+        queue8 = build_queue8(task_graph)
+        print u"Algorithm №3"
+        print queue3
+        print u"Algorithm №8"
+        print queue8
 
         # info_wind = InfoWindow(str(queue3), 'Queue 3 build result')
         
@@ -157,7 +164,6 @@ class MainGui(QtGui.QMainWindow):
         if ans:
             with open(file_name, 'r') as f:
                 data = pickle.load(f)
-                print type(data)
                 if data:
                     self.node_list = data['node_list']
                     self.proc_list = data['proc_list']
@@ -249,8 +255,8 @@ class MainGui(QtGui.QMainWindow):
             if self.selected_line:
                 self.selected_line.selected = False
             self.selected_line = None
-            print 'selecte node 1 = ', self.selected_node
-            print 'selected node 2 = ', selected_node2
+            # print 'selecte node 1 = ', self.selected_node
+            # print 'selected node 2 = ', selected_node2
             if self.selected_node:
                 if selected_node2 and selected_node2 != self.selected_node and not (
                     self.task_line_map.get((self.selected_node.id, selected_node2.id)) or
