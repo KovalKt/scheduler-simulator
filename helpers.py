@@ -127,5 +127,23 @@ def build_queue8(graph):
     queue8 = sorted(critical_count_map.iteritems(), key=lambda (k,v): int(k.weight), reverse=True)
     return map(lambda (n, c): (n, c, int(n.weight)), sorted(queue8, key=lambda (n,c): c))
 
- 
+def find_connections_and_invert_graph(graph):
+    inverted_graph = invert_graph(graph)
+    connections_map = {node: len(graph[node]) + len(inverted_graph[node]) for node in graph.iterkeys()}
+    return inverted_graph, connections_map
+
+
+def build_queue11(graph):
+    if not graph:
+        return
+
+    graph, connections_map = find_connections_and_invert_graph(graph)
+    critical_count_map = {node: 0 for node in graph.iterkeys()}
+    end_nodes = get_end_nodes(graph)
+    for node in graph.iterkeys():
+        all_paths = find_all_paths(graph, node, end_nodes)
+        critical_count = min(map(lambda p: len(p)-1, all_paths))
+        critical_count_map[node] = critical_count
+    queue11 = sorted(critical_count_map.iteritems(), key=lambda (n,c): c)
+    return map(lambda (k,v): (k,v, connections_map[k]), sorted(queue11, key=lambda (n,c): connections_map[n], reverse=True))
 

@@ -10,7 +10,7 @@ from Objects import *
 from helpers import create_graph
 from helpers import check_system_graph
 from helpers import check_task_graph
-from helpers import build_queue3, build_queue8
+from helpers import build_queue3, build_queue8, build_queue11
 
 node_index_gen = count()
 task_line_index_gen = count()
@@ -129,10 +129,14 @@ class MainGui(QtGui.QMainWindow):
             return
         queue3 = build_queue3(task_graph)
         queue8 = build_queue8(task_graph)
+        queue11 = build_queue11(task_graph)
         print u"Algorithm №3"
         print queue3
         print u"Algorithm №8"
         print queue8
+        print u"Algorithm №11"
+        print queue11
+
 
         # info_wind = InfoWindow(str(queue3), 'Queue 3 build result')
         
