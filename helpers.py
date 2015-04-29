@@ -121,7 +121,7 @@ def build_queue8(graph):
     end_nodes = get_end_nodes(graph)
     for node in graph.iterkeys():
         all_paths = find_all_paths(graph, node, end_nodes)
-        critical_count = min(map(lambda p: len(p)-1, all_paths))
+        critical_count = max(map(lambda p: len(p)-1, all_paths))
         critical_count_map[node] = critical_count
         # print 'crit count --- ', node, critical_count
     queue8 = sorted(critical_count_map.iteritems(), key=lambda (k,v): int(k.weight), reverse=True)
@@ -142,8 +142,8 @@ def build_queue11(graph):
     end_nodes = get_end_nodes(graph)
     for node in graph.iterkeys():
         all_paths = find_all_paths(graph, node, end_nodes)
-        critical_count = min(map(lambda p: len(p)-1, all_paths))
+        critical_count = max(map(lambda p: len(p)-1, all_paths))
         critical_count_map[node] = critical_count
     queue11 = sorted(critical_count_map.iteritems(), key=lambda (n,c): c)
-    return map(lambda (k,v): (k,v, connections_map[k]), sorted(queue11, key=lambda (n,c): connections_map[n], reverse=True))
+    return map(lambda (k,v): (k,connections_map[k],v), sorted(queue11, key=lambda (n,c): connections_map[n], reverse=True))
 

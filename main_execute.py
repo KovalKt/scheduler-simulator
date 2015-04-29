@@ -1,5 +1,5 @@
 # -*- coding: utf-8
-# 3 8 11
+# 3 8 11; 1 5
 import sys
 import random
 import pickle
@@ -34,6 +34,7 @@ class MainGui(QtGui.QMainWindow):
         self.has_error = False
         self.queue3 = []
         self.queue8 = []
+        self.w = None
         self.initUI()
         self.initMenu()
     
@@ -130,15 +131,19 @@ class MainGui(QtGui.QMainWindow):
         queue3 = build_queue3(task_graph)
         queue8 = build_queue8(task_graph)
         queue11 = build_queue11(task_graph)
-        print u"Algorithm №3"
-        print queue3
-        print u"Algorithm №8"
-        print queue8
-        print u"Algorithm №11"
-        print queue11
+        # print u"Algorithm №3"
+        # print queue3
+        # print u"Algorithm №8"
+        # print queue8
+        # print u"Algorithm №11"
+        # print queue11
+        queue_result = u"\nAlgorithm №3\n" + str(queue3)
+        queue_result += u"\n\nAlgorithm №8\n" + str(queue8)
+        queue_result += u"\n\nAlgorithm №11\n" + str(queue11)
 
-
-        # info_wind = InfoWindow(str(queue3), 'Queue 3 build result')
+        self.w = InfoWindow(queue_result, 'Queue build result')
+        self.w.setGeometry(QtCore.QRect(200, 200, 400, 200))
+        self.w.show()
         
 
     def save_into_file(self):
@@ -408,18 +413,30 @@ class InfoWindow(QtGui.QWidget):
         self.initUI(info_text, title)
 
     def initUI(self, info_text, title):
-        self.info = QtGui.QLabel(info_text, self)
-        self.info.setAlignment(QtCore.Qt.AlignHCenter)
-
-        self.btnQuit = QtGui.QPushButton("Quit", self)
-        self.btnQuit.setGeometry(150, 57, 200, 30)
-        self.connect(self.btnQuit, QtCore.SIGNAL('clicked()'), quit)
-
-        self.setGeometry(300, 300, 290, 150)
+        self.info = info_text
         self.setWindowTitle(title)
 
+    def paintEvent(self, event):
+        qp = QtGui.QPainter()
+        qp.begin(self)
+        self.drawText(event, qp)
+        qp.end()
 
-app = QtGui.QApplication(sys.argv)
-ex = MainGui()
-ex.show()
-app.exec_()
+    def drawText(self, event, qp):
+        qp.setPen(QtGui.QColor(0, 0, 0))
+        qp.setFont(QtGui.QFont('Decorative', 10))
+        qp.drawText(event.rect(), QtCore.Qt.AlignHCenter, self.info)
+
+class MainApp(QtGui.QApplication):
+    def __init__(self, *args):
+        QtGui.QApplication.__init__(self, *args)
+        self.main = MainGui()
+        self.connect(self, QtCore.SIGNAL("lastWindowClosed()"), self.byebye )
+        self.main.show()
+
+    def byebye( self ):
+        self.exit(0)
+
+if __name__ == "__main__":
+    app = MainApp(sys.argv)
+    app.exec_()
