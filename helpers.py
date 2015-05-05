@@ -1,4 +1,5 @@
-
+from random import randint
+from Objects import Line
 
 def create_graph(node_list, line_list, mode_type):
     if len(node_list) == 0:
@@ -147,3 +148,81 @@ def build_queue11(graph):
     queue11 = sorted(critical_count_map.iteritems(), key=lambda (n,c): c)
     return map(lambda (k,v): (k,connections_map[k],v), sorted(queue11, key=lambda (n,c): connections_map[n], reverse=True))
 
+def generate_graph_hendler():
+    try:
+        min_node_weight = int(raw_input('\nInput MIN Node weight: '))
+    except ValueError:
+        print "Not a number"
+    try:
+        max_node_weight = int(raw_input('\nInput MAX Node weight: '))
+    except ValueError:
+        print "Not a number"
+    try:
+        n_count = int(raw_input('\nInput Node number: '))
+    except ValueError:
+        print "Not a number"
+    try:
+        correlation = float(raw_input('\nInput correlation: '))
+    except ValueError:
+        print "Not a number"
+    try:
+        min_line_weight = int(raw_input('\nInput MIN Line weight: '))
+    except ValueError:
+        print "Not a number"
+    try:
+        max_line_weight = int(raw_input('\nInput MAX Line weight: '))
+    except ValueError:
+        print "Not a number"
+
+    # print min_node_weight, max_node_weight, n_count, correlation, min_line_weight, max_line_weight
+    node_weight = [randint(min_node_weight, max_node_weight) for x in range(n_count)]
+    print len(node_weight)
+    print 'weights = ', node_weight
+    sum_node_weight = sum(node_weight)
+    sum_line_weight = sum_node_weight/correlation - sum_node_weight
+    print "sum_line_weight = ", sum_line_weight
+    # max_line_count = sum([n_count - i for i in range(1, n_count)])
+    l_count = 0
+    l_list = []
+    current_sum_weight = 0
+    line_ends, max_line_count = get_lines_ends(n_count)
+    print 'max_line_count = ', max_line_count
+    while l_count < max_line_count:
+        new_weight = randint(min_line_weight, max_line_weight)
+        current_sum_weight += new_weight
+        l_count += 1
+        new_line = Line(l_count, 0, 0)
+        new_line.weight = new_weight
+        l_list.append(new_line)
+        if current_sum_weight == sum_line_weight:
+            break
+        if (sum_line_weight - current_sum_weight) <= max_line_weight:
+            l_count += 1
+            new_line = Line(l_count, 0, 0)
+            new_line.weight = int(round(sum_line_weight - current_sum_weight))
+            l_list.append(new_line)
+            current_sum_weight += new_line.weight
+            break
+    print 'l_count', l_count, 'current_sum_weight', current_sum_weight, 'l_list', l_list
+
+    if l_count == max_line_count and current_sum_weight != sum_line_weight:
+        diff = int(round(sum_line_weight - current_sum_weight))
+        while diff > 0:
+            add_weight = randint(1, diff)
+            # print 'kkkkk', add_weight
+            line = min(l_list, key=lambda l: l.weight)
+            # print 'minnn  ', line
+            line.weight += add_weight
+            diff -= add_weight
+
+    print 'modified l_list', l_list
+
+
+
+def get_lines_ends(node_count):
+    max_line_count = sum([node_count - i for i in range(1, node_count)])
+    line_ends = []
+    for i in range(1, node_count):
+        for j in range(i+1, node_count+1):
+            line_ends.append((i, j))
+    return line_ends, max_line_count 

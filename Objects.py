@@ -62,6 +62,9 @@ class Line(DrawableObject):
         self.weight = 1
         self.selected = False
 
+    def __repr__(self):
+        return 'Node %s wght - %s' % (self.id, self.weight)
+
     def center_x(self):
         return (self.from_node.center_x + (self.to_node.center_x - self.from_node.center_x) / 2)
 

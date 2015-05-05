@@ -11,6 +11,7 @@ from helpers import create_graph
 from helpers import check_system_graph
 from helpers import check_task_graph
 from helpers import build_queue3, build_queue8, build_queue11
+from helpers import generate_graph_hendler
 
 node_index_gen = count()
 task_line_index_gen = count()
@@ -56,6 +57,11 @@ class MainGui(QtGui.QMainWindow):
         self.buildQueueButton.resize(self.buildQueueButton.sizeHint())
         self.buildQueueButton.move(237, 0)
         self.connect(self.buildQueueButton, QtCore.SIGNAL('clicked()'), self.build_queue_hendler)
+
+        self.buildGenerateButton = QtGui.QPushButton('Generate graph', self)
+        self.buildGenerateButton.resize(self.buildQueueButton.sizeHint())
+        self.buildGenerateButton.move(337, 0)
+        self.connect(self.buildGenerateButton, QtCore.SIGNAL('clicked()'), self.generate_graph_hendler)
 
     def initMenu(self):
         exitAction = QtGui.QAction(QtGui.QIcon('exit.png'), '&Exit', self)
@@ -144,6 +150,9 @@ class MainGui(QtGui.QMainWindow):
         self.w = InfoWindow(queue_result, 'Queue build result')
         self.w.setGeometry(QtCore.QRect(200, 200, 400, 200))
         self.w.show()
+
+    def generate_graph_hendler(self):
+        generate_graph_hendler()
         
 
     def save_into_file(self):
