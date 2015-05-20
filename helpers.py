@@ -1,5 +1,6 @@
+from math import ceil
 from random import randint
-from Objects import Line
+from Objects import Line, Node
 
 def create_graph(node_list, line_list, mode_type):
     if len(node_list) == 0:
@@ -150,43 +151,46 @@ def build_queue11(graph):
 
 def generate_graph_hendler():
     try:
-        min_node_weight = int(raw_input('\nInput MIN Node weight: '))
+        min_node_weight = int(raw_input('Input MIN Node weight: '))
     except ValueError:
         print "Not a number"
     try:
-        max_node_weight = int(raw_input('\nInput MAX Node weight: '))
+        max_node_weight = int(raw_input('Input MAX Node weight: '))
     except ValueError:
         print "Not a number"
     try:
-        n_count = int(raw_input('\nInput Node number: '))
+        n_count = int(raw_input('Input Node number: '))
     except ValueError:
         print "Not a number"
     try:
-        correlation = float(raw_input('\nInput correlation: '))
+        correlation = float(raw_input('Input correlation: '))
     except ValueError:
         print "Not a number"
     try:
-        min_line_weight = int(raw_input('\nInput MIN Line weight: '))
+        min_line_weight = int(raw_input('Input MIN Line weight: '))
     except ValueError:
         print "Not a number"
     try:
-        max_line_weight = int(raw_input('\nInput MAX Line weight: '))
+        max_line_weight = int(raw_input('Input MAX Line weight: '))
     except ValueError:
         print "Not a number"
 
     # print min_node_weight, max_node_weight, n_count, correlation, min_line_weight, max_line_weight
     node_weight = [randint(min_node_weight, max_node_weight) for x in range(n_count)]
+    node_list = []
+    for indx, weight in enumerate(node_weight):
+        new_node = Node(indx+1, 50+20*indx, 50+10*indx)
+        new_node.weight = weight
+        node_list.append(new_node)
     print len(node_weight)
-    print 'weights = ', node_weight
     sum_node_weight = sum(node_weight)
-    sum_line_weight = sum_node_weight/correlation - sum_node_weight
-    print "sum_line_weight = ", sum_line_weight
+    sum_line_weight = int(round(sum_node_weight/correlation - sum_node_weight))
     # max_line_count = sum([n_count - i for i in range(1, n_count)])
+    
     l_count = 0
     l_list = []
     current_sum_weight = 0
     line_ends, max_line_count = get_lines_ends(n_count)
-    print 'max_line_count = ', max_line_count
     while l_count < max_line_count:
         new_weight = randint(min_line_weight, max_line_weight)
         current_sum_weight += new_weight
@@ -196,26 +200,39 @@ def generate_graph_hendler():
         l_list.append(new_line)
         if current_sum_weight == sum_line_weight:
             break
-        if (sum_line_weight - current_sum_weight) <= max_line_weight:
+        if (sum_line_weight - current_sum_weight) <= 0:
+            new_line.weight = sum_line_weight
+            break
+        if 0 < (sum_line_weight - current_sum_weight) <= max_line_weight:
             l_count += 1
             new_line = Line(l_count, 0, 0)
-            new_line.weight = int(round(sum_line_weight - current_sum_weight))
+            new_line.weight = sum_line_weight - current_sum_weight
             l_list.append(new_line)
             current_sum_weight += new_line.weight
             break
-    print 'l_count', l_count, 'current_sum_weight', current_sum_weight, 'l_list', l_list
 
     if l_count == max_line_count and current_sum_weight != sum_line_weight:
-        diff = int(round(sum_line_weight - current_sum_weight))
+        diff = sum_line_weight - current_sum_weight
         while diff > 0:
-            add_weight = randint(1, diff)
-            # print 'kkkkk', add_weight
+            add_weight = randint(1, int(ceil(diff/2.0)))
             line = min(l_list, key=lambda l: l.weight)
-            # print 'minnn  ', line
             line.weight += add_weight
             diff -= add_weight
 
-    print 'modified l_list', l_list
+    for line in l_list:
+        end_number = randint(0, len(line_ends)-1)
+        from_id, to_id = line_ends[end_number]
+        line.from_node = node_list[from_id-1]
+        line.to_node = node_list[to_id-1]
+        line_ends.remove((from_id, to_id))
+
+    # node_list = organize_graph_location(node_list, l_list)
+    return node_list, l_list
+
+
+def organize_graph_location(node_list, line_list):
+    pass
+
 
 
 

@@ -59,7 +59,7 @@ class MainGui(QtGui.QMainWindow):
         self.connect(self.buildQueueButton, QtCore.SIGNAL('clicked()'), self.build_queue_hendler)
 
         self.buildGenerateButton = QtGui.QPushButton('Generate graph', self)
-        self.buildGenerateButton.resize(self.buildQueueButton.sizeHint())
+        self.buildGenerateButton.resize(self.buildGenerateButton.sizeHint())
         self.buildGenerateButton.move(337, 0)
         self.connect(self.buildGenerateButton, QtCore.SIGNAL('clicked()'), self.generate_graph_hendler)
 
@@ -152,7 +152,12 @@ class MainGui(QtGui.QMainWindow):
         self.w.show()
 
     def generate_graph_hendler(self):
-        generate_graph_hendler()
+        new_node_list, new_line_list = generate_graph_hendler()
+        self.node_list = new_node_list
+        self.task_line_list = new_line_list
+        self.task_line_map = {(line.from_node.id, line.to_node.id): line for line in new_line_list}
+        node_index_gen = count(len(new_node_list))
+        task_line_index_gen = count(len(new_line_list))
         
 
     def save_into_file(self):
