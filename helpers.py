@@ -182,11 +182,10 @@ def generate_graph_hendler():
         new_node = Node(indx+1, 50+20*indx, 50+10*indx)
         new_node.weight = weight
         node_list.append(new_node)
-    print len(node_weight)
     sum_node_weight = sum(node_weight)
     sum_line_weight = int(round(sum_node_weight/correlation - sum_node_weight))
     # max_line_count = sum([n_count - i for i in range(1, n_count)])
-    
+
     l_count = 0
     l_list = []
     current_sum_weight = 0

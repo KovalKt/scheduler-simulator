@@ -278,8 +278,6 @@ class MainGui(QtGui.QMainWindow):
             if self.selected_line:
                 self.selected_line.selected = False
             self.selected_line = None
-            # print 'selecte node 1 = ', self.selected_node
-            # print 'selected node 2 = ', selected_node2
             if self.selected_node:
                 if selected_node2 and selected_node2 != self.selected_node and not (
                     self.task_line_map.get((self.selected_node.id, selected_node2.id)) or
