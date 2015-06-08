@@ -12,6 +12,7 @@ from helpers import check_system_graph
 from helpers import check_task_graph
 from helpers import build_queue3, build_queue8, build_queue11
 from helpers import generate_graph_hendler
+from helpers import generate_gant_hendler
 
 node_index_gen = count()
 task_line_index_gen = count()
@@ -35,6 +36,7 @@ class MainGui(QtGui.QMainWindow):
         self.has_error = False
         self.queue3 = []
         self.queue8 = []
+        self.queue11 = []
         self.w = None
         self.initUI()
         self.initMenu()
@@ -62,6 +64,11 @@ class MainGui(QtGui.QMainWindow):
         self.buildGenerateButton.resize(self.buildGenerateButton.sizeHint())
         self.buildGenerateButton.move(337, 0)
         self.connect(self.buildGenerateButton, QtCore.SIGNAL('clicked()'), self.generate_graph_hendler)
+
+        self.buildGantButton = QtGui.QPushButton('Gant diagramm', self)
+        self.buildGantButton.resize(self.buildGantButton.sizeHint())
+        self.buildGantButton.move(457, 0)
+        self.connect(self.buildGantButton, QtCore.SIGNAL('clicked()'), self.generate_gant_hendler)
 
     def initMenu(self):
         exitAction = QtGui.QAction(QtGui.QIcon('exit.png'), '&Exit', self)
@@ -134,18 +141,18 @@ class MainGui(QtGui.QMainWindow):
         system_graph, task_graph = self.validate()
         if self.has_error:
             return
-        queue3 = build_queue3(task_graph)
-        queue8 = build_queue8(task_graph)
-        queue11 = build_queue11(task_graph)
+        self.queue3 = build_queue3(task_graph)
+        self.queue8 = build_queue8(task_graph)
+        self.queue11 = build_queue11(task_graph)
         # print u"Algorithm №3"
         # print queue3
         # print u"Algorithm №8"
         # print queue8
         # print u"Algorithm №11"
         # print queue11
-        queue_result = u"\nAlgorithm №3\n" + str(queue3)
-        queue_result += u"\n\nAlgorithm №8\n" + str(queue8)
-        queue_result += u"\n\nAlgorithm №11\n" + str(queue11)
+        queue_result = u"\nAlgorithm №3\n" + str(self.queue3)
+        queue_result += u"\n\nAlgorithm №8\n" + str(self.queue8)
+        queue_result += u"\n\nAlgorithm №11\n" + str(self.queue11)
 
         self.w = InfoWindow(queue_result, 'Queue build result')
         self.w.setGeometry(QtCore.QRect(200, 200, 400, 200))
@@ -158,7 +165,14 @@ class MainGui(QtGui.QMainWindow):
         self.task_line_map = {(line.from_node.id, line.to_node.id): line for line in new_line_list}
         node_index_gen = count(len(new_node_list))
         task_line_index_gen = count(len(new_line_list))
-        
+
+    def generate_gant_hendler(self):
+        if self.has_error:
+            return
+        system_graph, task_graph = self.validate()
+        if self.has_error:
+            return
+        generate_gant_hendler(self.proc_list, self.queue3, task_graph)
 
     def save_into_file(self):
         save_file_dialog = DialogWindow()

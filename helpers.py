@@ -1,6 +1,6 @@
 from math import ceil
 from random import randint
-from Objects import Line, Node
+from Objects import Line, Node, Gant_diagram
 
 def create_graph(node_list, line_list, mode_type):
     if len(node_list) == 0:
@@ -231,6 +231,11 @@ def generate_graph_hendler():
 
 def organize_graph_location(node_list, line_list):
     pass
+
+def generate_gant_hendler(proc_list, tasks_queue, task_graph):
+    diagram = Gant_diagram(tasks_queue)
+    diagram.prepare_data(proc_list)
+    diagram.first_assign_algorithm(task_graph)
 
 
 
