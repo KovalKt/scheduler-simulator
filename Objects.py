@@ -3,6 +3,7 @@ from PyQt4.QtGui import QFont
 from PyQt4.QtGui import QPen
 
 from math import sqrt
+from random import randint
 CIRCLE_SIZE = 36
 CIRCLE_R = CIRCLE_SIZE/2
 
@@ -108,7 +109,7 @@ class Line(DrawableObject):
 
 class Gant_diagram():
 
-    def __init__(self, tasks_queue):
+    def __init__(self, tasks_queue, task_line_map):
         self.processors = {}
         self.free_proc = []
         self.current_time = 0
@@ -116,6 +117,8 @@ class Gant_diagram():
         self.tasks_queue = map(lambda x: x[0],tasks_queue)
         self.completed_tasks = {}
         self.ready_tasks = []
+        self.task_line_map = task_line_map
+        self.in_progress_tasks = []
 
 
     def prepare_data(self, proc_list):
@@ -128,7 +131,7 @@ class Gant_diagram():
         self.free_proc = map(lambda x: x.id, sorted([p for p in proc_list], key=lambda x: int(x.weight)))
         # self.free_proc
 
-    def first_assign_algorithm(self, task_graph):
+    def first_assign_algorithm(self, task_graph, system_graph):
         print 'tasks_queue', self.tasks_queue
         print 'task_graph', task_graph
         from helpers import get_start_nodes, invert_graph
@@ -145,6 +148,7 @@ class Gant_diagram():
             for t in range(int(task.weight)):
                 self.processors[proc_id]['calc'].append(task)
             self.ready_tasks.remove(task)
+            self.in_progress_tasks.append(task.id)
         print 'processors'
         for k, v in self.processors.iteritems():
             print k, v
@@ -154,22 +158,194 @@ class Gant_diagram():
             for proc_id, time_lines in self.processors.iteritems():
                 if (len(time_lines['calc']) == self.current_time or 
                     len(time_lines['calc']) > self.current_time and 
+                    isinstance(time_lines['calc'], Node) and
                     time_lines['calc'][self.current_time-1] != time_lines['calc'][self.current_time]
                 ):
                     compl_task = time_lines['calc'][self.current_time-1]
+                    if isinstance(compl_task, int):
+                        print '!!!!!!!!!!!compl_task is int', compl_task, time_lines['calc']
+                        print '!!!!!!!!!current_time', self.current_time
                     self.completed_tasks[compl_task.id] = compl_task
+                    self.in_progress_tasks.remove(compl_task.id)
                     self.free_proc.append(proc_id)
             print 'completed_tasks', self.completed_tasks
             print 'free_process', self.free_proc
+            if len(self.completed_tasks) == len(self.tasks_queue):
+                break
             self.update_ready_tasks(task_graph)
             # assign for random free proc
-            
-            break
+            proc_for_assign = self.free_proc[randint(0, len(self.free_proc)-1)]
+            while self.ready_tasks:
+                self.assign_to_proc(proc_for_assign, self.current_time, task_graph, system_graph)
+                print 'processors after auto assign'
+                for k, v in self.processors.iteritems():
+                    print k, v
+            self.find_next_task_end_time()
+            # break
+
+    def assign_to_proc(self, proc_for_assign, time, task_graph, system_graph):
+        # if from_proc == proc_for_assign:
+        #     self.
+        print 'proc_for_assign', proc_for_assign
+        proc_for_assign = filter(lambda x: x.id == proc_for_assign, system_graph)[0]
+        task_to_assign = self.ready_tasks.pop()
+        parents = task_graph[task_to_assign]
+        print 'parents', parents
+        for p in parents:
+            for proc_id, time_lines in self.processors.iteritems():
+                if p in time_lines['calc']:
+                    parent_proc = filter(lambda x: x.id == proc_id, system_graph)[0]
+            print task_to_assign,'parent_proc', parent_proc, proc_for_assign
+            print '_______system graph_____', system_graph
+            new_time = time
+            if parent_proc == proc_for_assign:
+                continue
+                # self.assign_task_to_proc(task_to_assign, proc_for_assign, time)
+            else:
+                path = [item for item in dfs_paths(system_graph, parent_proc, proc_for_assign)]
+                print '============', path, 'ppp', parent_proc, proc_for_assign
+                path = sorted(path, key=lambda x: len(x))[0]
+                if not path:
+                    path = [item for item in dfs_paths(system_graph, proc_for_assign, parent_proc)]
+                    path = sorted(path, key=lambda x: len(x))[0]
+                print 'paths ', path
+                # spikes
+                if proc_for_assign == path[0]:
+                    path.reverse()
+                for indx, proc in enumerate(path):
+                    if indx == 0:
+                        new_time = self.assign_transmit_to_proc(task_to_assign, proc, new_time, p, 'send')
+                        new_time -= 1
+                    elif indx == len(path)-1:
+                        new_time = self.assign_transmit_to_proc(task_to_assign, proc, new_time, p, 'recive')
+                    else:
+                        new_time -= 1
+                        new_time = self.assign_transmit_to_proc(task_to_assign, proc, new_time, p, 'transfer')
+
+                    # new_time -=1
+                    # print "==__==__==__==", new_time
+        self.assign_task_to_proc(task_to_assign, proc_for_assign, new_time)
+        self.free_proc.remove(proc_for_assign.id)
+        print 'clean free_proc', self.free_proc, proc_for_assign.id
+        # break
+
+    def assign_transmit_to_proc(self, task, proc_for_assign, time, parent_task, transmit_type, next_proc=None):
+        
+        while True:
+            for line_name, time_line in self.processors[proc_for_assign.id].iteritems():
+                if line_name == 'calc':
+                    continue
+                transmit = Transmit(parent_task, task, self.task_line_map, transmit_type)
+                if len(time_line) == time:
+                    for t in range(transmit.weight):
+                        time_line.append(transmit)
+                    return time+transmit.weight
+                elif len(time_line) < time:
+                    time_line += [0]*(time - len(time_line))
+                    for t in range(transmit.weight):
+                        time_line.append(transmit)
+                    return time+transmit.weight
+                elif len(time_line) > time:
+                    # transmit_lengt = int(self.task_line_map[(parent_task.id, task.id)].weight)
+                    if not any(time_line[time:time+transmit.weight]):
+                        for t in range(transmit.weight):
+                            time_line[time+t] = transmit
+                        return time+transmit.weight
+            time += 1
+
+    def assign_task_to_proc(self, task, proc_for_assign, time):
+        time_line = self.processors[proc_for_assign.id]['calc']
+        # self.ready_tasks.remove(task)
+        self.in_progress_tasks.append(task.id)
+        while True:
+            if len(time_line) == time:
+                for t in range(int(task.weight)):
+                    time_line.append(task)
+                    return
+            elif len(time_line) < time:
+                time_line += [0]*(time - len(time_line))
+                for t in range(int(task.weight)):
+                    time_line.append(task)
+                return
+            elif len(time_line) > time:
+                if not any(time_line[time:time+int(task.weight)]):
+                    for t in range(int(task.weight)):
+                        time_line[time+t] = task
+                    return
+                    #time+transmit.weight
+            time += 1  
+
+    def find_next_task_end_time(self):
+        # next_time = self.current_time
+        next_time = []
+        for proc_id, time_lines in self.processors.iteritems():
+            # p_next_time = next_time
+            line = time_lines['calc']
+            if not len(line):
+                continue
+            next_time.append(len(line))
+            for i in range(len(line[self.current_time:-1])):
+                if line[i] != line[i+1]:
+                    next_time.append(self.current_time + i+1)
+        print 'next_time ', next_time 
+        self.next_task_end_time = min(filter(lambda x: x > self.current_time, next_time))
+
 
     def update_ready_tasks(self, task_graph):
         for task, dependance in task_graph.iteritems():
-            if task.id not in self.completed_tasks and dependance:
+            if task.id not in self.completed_tasks and task.id not in self.in_progress_tasks and dependance:
                 if all(map(lambda x: x.id in self.completed_tasks, dependance)):
                     print 'yahoo!!!', task, dependance
                     self.ready_tasks.append(task)
+
+# def dfs_paths(graph, begin, goal, path = [], paths = []):
+#     path.append(goal)
+#     for related in graph[goal]:
+#         if related == begin and len(path) > 2:
+#             paths.append(list(path))
+#         if related not in path:
+#             paths = dfs_paths(graph, begin, related, path, paths)
+#     path.pop()        
+#     return paths
+
+# def dfs_paths(graph, begin, current, path = [], paths = []):
+#     print 'in dfs', begin, current
+#     path.append(current)
+#     for related in graph[current]:
+#         if related == begin and len(path) > 2:
+#             paths.append(list(path))
+#         if related not in path:
+#             paths = dfs_paths(graph, begin, related, path, paths)
+#     path.pop()        
+#     return paths
+
+# def dfs_paths(graph, start, goal, path=None):
+#     if path is None:
+#         path = [start]
+#     if start == goal:
+#         yield path
+#     for next in graph[start] - set(path):
+#         yield dfs_paths(graph, next, goal, path + [next])
+
+def dfs_paths(graph, start, end):
+    todo = [[start, [start]]]
+    while 0 < len(todo):
+        (node, path) = todo.pop(0)
+        for next_node in graph[node]:
+            if next_node in path:
+                continue
+            elif next_node == end:
+                yield path + [next_node]
+            else:
+                todo.append([next_node, path + [next_node]])
+
+class Transmit():
+    def __init__(self, from_task, to_task, task_line_map, _type):
+        self.from_task = from_task
+        self.to_task = to_task
+        self.weight = int(task_line_map[(from_task.id, to_task.id)].weight)
+        self.transmit_type = _type
+
+    def __repr__(self):
+        return "%s from t%s to t%s, time %s" % (self.transmit_type, self.from_task.id, self.to_task.id, self.weight)
 

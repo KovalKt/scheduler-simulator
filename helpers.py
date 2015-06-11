@@ -232,10 +232,10 @@ def generate_graph_hendler():
 def organize_graph_location(node_list, line_list):
     pass
 
-def generate_gant_hendler(proc_list, tasks_queue, task_graph):
-    diagram = Gant_diagram(tasks_queue)
+def generate_gant_hendler(proc_list, tasks_queue, task_graph, system_graph, task_line_map):
+    diagram = Gant_diagram(tasks_queue, task_line_map)
     diagram.prepare_data(proc_list)
-    diagram.first_assign_algorithm(task_graph)
+    diagram.first_assign_algorithm(task_graph, system_graph)
 
 
 
