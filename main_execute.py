@@ -172,13 +172,17 @@ class MainGui(QtGui.QMainWindow):
         system_graph, task_graph = self.validate()
         if self.has_error:
             return
-        generate_gant_hendler(
-            self.proc_list,
-            self.queue3,
-            task_graph,
-            system_graph,
-            self.task_line_map,
-        )
+        gant_dialog = DialogWindow()
+        algorithm, ans = gant_dialog.showDialog('Enter assigning algorithm:')
+        if ans:
+            generate_gant_hendler(
+                self.proc_list,
+                self.queue3,
+                task_graph,
+                system_graph,
+                self.task_line_map,
+                int(algorithm),
+            )
 
     def save_into_file(self):
         save_file_dialog = DialogWindow()
