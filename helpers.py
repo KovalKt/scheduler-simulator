@@ -235,7 +235,7 @@ def organize_graph_location(node_list, line_list):
 def generate_gant_hendler(proc_list, tasks_queue, task_graph, system_graph, task_line_map, algorithm):
     diagram = Gant_diagram(tasks_queue, task_line_map, algorithm)
     diagram.prepare_data(proc_list)
-    diagram.first_assign_algorithm(task_graph, system_graph)
+    return diagram.first_assign_algorithm(task_graph, system_graph)
 
 
 

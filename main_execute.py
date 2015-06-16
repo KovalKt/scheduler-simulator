@@ -154,7 +154,7 @@ class MainGui(QtGui.QMainWindow):
         queue_result += u"\n\nAlgorithm №8\n" + str(self.queue8)
         queue_result += u"\n\nAlgorithm №11\n" + str(self.queue11)
 
-        self.w = InfoWindow(queue_result, 'Queue build result')
+        self.w = InfoWindow(queue_result, 'Queue build result', 'text')
         self.w.setGeometry(QtCore.QRect(200, 200, 400, 200))
         self.w.show()
 
@@ -175,7 +175,7 @@ class MainGui(QtGui.QMainWindow):
         gant_dialog = DialogWindow()
         algorithm, ans = gant_dialog.showDialog('Enter assigning algorithm:')
         if ans:
-            generate_gant_hendler(
+           result = generate_gant_hendler(
                 self.proc_list,
                 self.queue3,
                 task_graph,
@@ -183,6 +183,9 @@ class MainGui(QtGui.QMainWindow):
                 self.task_line_map,
                 int(algorithm),
             )
+        self.w = InfoWindow(result, 'Gant diagram', 'gant')
+        self.w.setGeometry(QtCore.QRect(200, 200, 400, 200))
+        self.w.show()
 
     def save_into_file(self):
         save_file_dialog = DialogWindow()
@@ -443,25 +446,43 @@ class DialogWindow(QtGui.QWidget):
 
 class InfoWindow(QtGui.QWidget):
 
-    def __init__(self, info_text, title):
+    def __init__(self, result, title, drawing_type):
         super(InfoWindow, self).__init__()
+        self.drawing_type = drawing_type
 
-        self.initUI(info_text, title)
+        self.initUI(result, title)
 
-    def initUI(self, info_text, title):
-        self.info = info_text
+    def initUI(self, result, title):
+        self.info = result
         self.setWindowTitle(title)
 
     def paintEvent(self, event):
         qp = QtGui.QPainter()
         qp.begin(self)
-        self.drawText(event, qp)
+        if self.drawing_type == 'text':
+            self.drawText(event, qp)
+        elif self.drawing_type == 'gant':
+            result = ''
+            # print '44444444444444', type(self.info)
+            if type(self.info) != str:
+                for k, v in self.info.iteritems():
+                    result += str(k)+ '\n'
+                    for name, time_line in v.iteritems():
+                        if name != 'calc':
+                            result += str(name) + str(time_line) + '\n'
+                    result += 'calc' + str(v['calc']) + '\n'
+                self.info = result
+                # print 'rrrr', type(result)
+            self.drawText(event, qp)
         qp.end()
 
     def drawText(self, event, qp):
         qp.setPen(QtGui.QColor(0, 0, 0))
         qp.setFont(QtGui.QFont('Decorative', 10))
-        qp.drawText(event.rect(), QtCore.Qt.AlignHCenter, self.info)
+        if self.drawing_type == 'text':
+            qp.drawText(event.rect(), QtCore.Qt.AlignHCenter, self.info)
+        elif self.drawing_type == 'gant':
+            qp.drawText(event.rect(), QtCore.Qt.AlignLeft, self.info)
 
 class MainApp(QtGui.QApplication):
     def __init__(self, *args):

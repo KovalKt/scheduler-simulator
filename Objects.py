@@ -195,6 +195,7 @@ class Gant_diagram():
         for k, v in self.processors.iteritems():
             print k, v
             # break
+        return self.processors
 
     def get_proc_for_assign(self, parents, system_graph, next_task):
         task_proc_map = {}
@@ -435,5 +436,5 @@ class Transmit():
         self.transmit_type = _type
 
     def __repr__(self):
-        return "%s from t%s to t%s, time %s" % (self.transmit_type, self.from_task.id, self.to_task.id, self.weight)
+        return "%s t%s -> t%s" % (self.transmit_type[0], self.from_task.id, self.to_task.id)
 
